@@ -261,13 +261,18 @@ class GoalWidget(Static, can_focus=True):
         self.logs = logs
         self.streak = streak
         self.sparkline_data = sparkline_data
+        # Cache the rendered content since it won't change
+        self._cached_render: Text | None = None
 
     def on_click(self) -> None:
         """Open mission detail modal when clicked."""
         self.app.push_screen(MissionDetailModal(self.goal))
 
     def render(self) -> Text:
-        """Render the goal with lipgloss-inspired styling."""
+        """Render the goal with lipgloss-inspired styling (cached)."""
+        if self._cached_render is not None:
+            return self._cached_render
+
         g = self.goal
 
         # Build the card content
@@ -300,6 +305,7 @@ class GoalWidget(Static, can_focus=True):
         if self.streak > 0:
             lines.append(f"  {ICONS['flame']}{self.streak}", style=COLORS["yellow"])
 
+        self._cached_render = lines
         return lines
 
 
@@ -772,11 +778,18 @@ class ResolutionApp(App):
             storage.add_log(gid, update, update, val, "", sent)
 
     def _refresh_display(self) -> None:
-        """Refresh goals and stats."""
+        """Refresh goals and stats - loads data once."""
         goals_list = self.query_one("#goals-list", ScrollableContainer)
         goals_list.remove_children()
 
+        # Load all data once
         goals = storage.get_goals()
+        all_logs = storage.get_logs()
+
+        # Pre-index logs by goal_id for O(1) lookup
+        logs_by_goal: dict[int, list] = {}
+        for log in all_logs:
+            logs_by_goal.setdefault(log.goal_id, []).append(log)
 
         if not goals:
             goals_list.mount(Static(
@@ -784,14 +797,11 @@ class ResolutionApp(App):
             ))
         else:
             for goal in sorted(goals, key=lambda g: g.priority):
-                prog = storage.get_goal_progress(goal.id)
-                logs = storage.get_logs(goal.id)
-
-                # Calculate values
-                log_count = prog["count"]
+                goal_logs = logs_by_goal.get(goal.id, [])
+                log_count = len(goal_logs)
                 progress = min(log_count / 10, 1.0)
-                streak = self._calc_streak(logs)
-                sparkline = self._get_sparkline(logs)
+                streak = self._calc_streak(goal_logs)
+                sparkline = self._get_sparkline(goal_logs)
 
                 widget = GoalWidget(
                     goal=goal,
@@ -802,8 +812,8 @@ class ResolutionApp(App):
                 )
                 goals_list.mount(widget)
 
-        # Update stats
-        self._update_stats()
+        # Update stats with already-loaded data
+        self._update_stats(goals, all_logs)
 
     def _calc_streak(self, logs) -> int:
         if not logs:
@@ -831,17 +841,16 @@ class ResolutionApp(App):
             values.append(sum(l.value or 1 for l in day_logs))
         return values
 
-    def _update_stats(self) -> None:
-        goals = storage.get_goals()
-        logs = storage.get_logs()
-
-        week_ago = datetime.now() - timedelta(days=7)
+    def _update_stats(self, goals: list, logs: list) -> None:
+        """Update stats bar with pre-loaded data."""
+        now = datetime.now()
+        week_ago = now - timedelta(days=7)
         weekly = [l for l in logs if l.timestamp > week_ago]
 
-        three_days = datetime.now() - timedelta(days=3)
-        on_track = sum(1 for g in goals if any(
-            l.goal_id == g.id and l.timestamp > three_days for l in logs
-        ))
+        three_days = now - timedelta(days=3)
+        # Build set of goal_ids with recent activity for O(1) lookup
+        recent_goal_ids = {l.goal_id for l in logs if l.timestamp > three_days}
+        on_track = sum(1 for g in goals if g.id in recent_goal_ids)
 
         # Update stats widget
         stats = self.query_one("#stats-bar", StatsWidget)

@@ -7,6 +7,11 @@ from typing import Optional
 from .models import DataStore, Goal, LogEntry, Config
 
 
+# Simple in-memory cache to avoid repeated disk reads
+_cache: DataStore | None = None
+_cache_mtime: float = 0
+
+
 def get_data_dir() -> Path:
   """Get the data directory path, creating it if needed."""
   data_dir = Path.home() / ".resolutions"
@@ -19,21 +24,47 @@ def get_data_file() -> Path:
   return get_data_dir() / "data.json"
 
 
+def _invalidate_cache() -> None:
+  """Invalidate the cache after writes."""
+  global _cache, _cache_mtime
+  _cache = None
+  _cache_mtime = 0
+
+
 def load_data() -> DataStore:
-  """Load data from JSON file, creating default if not exists."""
+  """Load data from JSON file, using cache if valid."""
+  global _cache, _cache_mtime
   data_file = get_data_file()
+
+  # Check if cache is still valid
+  if _cache is not None:
+    if data_file.exists():
+      mtime = data_file.stat().st_mtime
+      if mtime == _cache_mtime:
+        return _cache
+
+  # Load from disk
   if data_file.exists():
     with open(data_file, "r") as f:
       data = json.load(f)
-    return DataStore.model_validate(data)
-  return DataStore()
+    _cache = DataStore.model_validate(data)
+    _cache_mtime = data_file.stat().st_mtime
+    return _cache
+
+  _cache = DataStore()
+  _cache_mtime = 0
+  return _cache
 
 
 def save_data(store: DataStore) -> None:
-  """Save data to JSON file."""
+  """Save data to JSON file and update cache."""
+  global _cache, _cache_mtime
   data_file = get_data_file()
   with open(data_file, "w") as f:
     json.dump(store.model_dump(mode="json"), f, indent=2, default=str)
+  # Update cache with new data
+  _cache = store
+  _cache_mtime = data_file.stat().st_mtime
 
 
 def add_goal(title: str, category: str = "general", target: str = "",
