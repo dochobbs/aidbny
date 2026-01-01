@@ -3,20 +3,22 @@
 An AI-powered terminal dashboard for tracking your New Year's resolutions. Built for the [AI Daily Brief 10-Week Challenge](https://aidbnewyear.com).
 
 ```
-╭──────────────────────────────────────────────────────────────────────────────╮
-│  󰓾 AI MISSIONS                      │  󰚩 AI COACH                          │
-│                                      │                                       │
-│  󰓾 Week 1: Resolution Tracker       │  Welcome to the 10-Week AI Challenge! │
-│     ████████████████ 100%            │  You're on Week 1. Let's build        │
-│     ▁▂▃▅▇█▇  Build a tracker  󰈸4    │  something awesome!                   │
-│                                      │                                       │
-│  󰆋 Week 2: Model Mapping            │  ┌─────────────────────────────────┐  │
-│     ░░░░░░░░░░░░░░░░   0%            │  │ 󰊠 Progress │ 󰛨 Motivate │ ...  │  │
-│     ▁▁▁▁▁▁▁  Map AI models           │  └─────────────────────────────────┘  │
-│                                      │                                       │
-│  󰂖 Week 3: Deep Research            │  > Chat with your coach...            │
-│     ░░░░░░░░░░░░░░░░   0%            │                                       │
-╰──────────────────────────────────────────────────────────────────────────────╯
+╭─────────────────────────────────┬─────────────────────────────────╮
+│  ◎ AI MISSIONS                  │  ◉ AI COACH                     │
+├─────────────────────────────────┼─────────────────────────────────┤
+│                                 │                                 │
+│  ◎ Week 1: Resolution Tracker   │  Welcome to the 10-Week AI      │
+│    ████████████████ 100%        │  Challenge! You're on Week 1.   │
+│    ▁▂▃▅▇█▇  Build a tracker     │  Let's build something awesome! │
+│                                 │                                 │
+│  ◇ Week 2: Model Mapping        │  ┌───────────┬──────────┬─────┐ │
+│    ░░░░░░░░░░░░░░░░   0%        │  │ Progress  │ Motivate │ ... │ │
+│    ▁▁▁▁▁▁▁  Map AI models       │  └───────────┴──────────┴─────┘ │
+│                                 │                                 │
+│  ◇ Week 3: Deep Research        │  > Chat with your coach...      │
+│    ░░░░░░░░░░░░░░░░   0%        │                                 │
+│                                 │                                 │
+╰─────────────────────────────────┴─────────────────────────────────╯
 ```
 
 ## Features
